@@ -68,6 +68,24 @@ app.post('/enviar-mensaje', (req, res) => {
   });
 });
 
+// 2. Obtener todos los mensajes recibidos
+app.get('/mensajes', (req, res) => {
+  const query = 'SELECT id, nombre, correo, asunto, mensaje, fecha FROM contactos ORDER BY fecha DESC';
+
+  db.query(query, (err, resultados) => {
+    if (err) {
+      console.error('Error al consultar mensajes:', err);
+      return res.status(500).json({ exito: false, mensaje: 'Error al consultar mensajes' });
+    }
+
+    res.json({ exito: true, mensajes: resultados });
+  });
+});
+
+app.get('/contactos', (req, res) => {
+  res.redirect(307, '/mensajes');
+});
+
 // 3. Actualizar un producto existente (UPDATE)
 app.put("/productos/:id", (req, res) => {
   const id = req.params.id;

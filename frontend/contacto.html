@@ -12,7 +12,7 @@
       <a href="index.html" class="logo"> Mi<strong>Tienda</strong></a>
       <nav class="nav-links">
         <a href="index.html">Inicio</a>
-        <a href="#productos">Productos</a>
+        <a href="index.html">Productos</a>
         <a href="contacto.html">Contacto</a>
       </nav>
     </div>
@@ -33,9 +33,57 @@
             <br><br>
             <button type="submit" class="btn">Enviar</button>
         </form>
+    </div>
+
+    <section class="panel-mensajes">
+        <div class="panel-header">
+            <h2>Mensajes recibidos</h2>
+            <button id="btnActualizarMensajes" class="btn btn-small" type="button">Actualizar</button>
+        </div>
+        <div id="listaMensajes" class="lista-mensajes">
+            <p class="mensaje-vacio">Cargando mensajes...</p>
+        </div>
+    </section>
 
 <script>
   const form = document.getElementById('contact-form');
+  const listaMensajes = document.getElementById('listaMensajes');
+  const btnActualizarMensajes = document.getElementById('btnActualizarMensajes');
+
+  async function cargarMensajes() {
+    if (!listaMensajes) return;
+
+    try {
+      const respuesta = await fetch('http://localhost:3000/mensajes');
+      const data = await respuesta.json();
+
+      if (!respuesta.ok || !data.exito) {
+        throw new Error(data.mensaje || 'No se pudieron cargar los mensajes');
+      }
+
+      const mensajes = data.mensajes || [];
+
+      if (mensajes.length === 0) {
+        listaMensajes.innerHTML = '<p class="mensaje-vacio">Aún no hay mensajes recibidos.</p>';
+        return;
+      }
+
+      listaMensajes.innerHTML = mensajes.map((mensaje) => `
+        <article class="mensaje-item">
+          <div class="mensaje-topo">
+            <strong>${mensaje.nombre}</strong>
+            <span>${new Date(mensaje.fecha).toLocaleString('es-ES')}</span>
+          </div>
+          <p class="mensaje-mail">${mensaje.correo}</p>
+          <p class="mensaje-asunto">${mensaje.asunto}</p>
+          <p class="mensaje-cuerpo">${mensaje.mensaje}</p>
+        </article>
+      `).join('');
+    } catch (error) {
+      console.error('Error al cargar mensajes:', error);
+      listaMensajes.innerHTML = '<p class="mensaje-vacio">No se pudieron cargar los mensajes.</p>';
+    }
+  }
 
   if (form) {
     form.addEventListener('submit', async function (e) {
@@ -62,6 +110,7 @@
         if (resultado.exito) {
           alert('¡Mensaje guardado correctamente en la base de datos!');
           form.reset();
+          await cargarMensajes();
         } else {
           alert('Error: ' + resultado.mensaje);
         }
@@ -71,6 +120,12 @@
       }
     });
   }
+
+  if (btnActualizarMensajes) {
+    btnActualizarMensajes.addEventListener('click', cargarMensajes);
+  }
+
+  cargarMensajes();
 </script>
 
     </div>
