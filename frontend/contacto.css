@@ -2,7 +2,7 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-font-family: 'Poppins', Arial, sans-serif;
+  font-family: 'Poppins', Arial, sans-serif;
 }
 
 body {
@@ -14,6 +14,7 @@ body {
 }
 
 .navbar {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   background-color: #ffffff;
   border-bottom: 1px solid #e2e8f0;
   padding: 1rem 0;
@@ -46,7 +47,7 @@ body {
 
 .nav-links {
   display: flex;
-  gap: 2rem;
+  gap: 20px;
 }
 
 .nav-links a {
@@ -55,7 +56,6 @@ body {
   font-weight: 600;
   font-size: 0.95rem;
   display: inline-block;
-  transition: color 0.2s ease;
   transition: color 0.3s ease, transform 0.3 ease;
 }
 
