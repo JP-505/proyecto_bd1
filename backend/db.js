@@ -4,7 +4,8 @@ const mysql = require("mysql2");
 const conexion = mysql.createConnection({
     host: "localhost",   // Servidor local
     user: "root",       // Usuario de MySQL (Por defecto en XAMPP)
-    database: "tienda"  // Nombre de nuestra BD
+    database: "tienda",  // Nombre de nuestra BD
+    port: 3307
 });
 
 // Comprobar si la conexion fue exitosa

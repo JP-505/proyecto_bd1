@@ -18,9 +18,6 @@ async function cargarProductos() {
 
   try {
     const respuesta = await fetch(`${API_URL}/productos`);
-    if (!respuesta.ok) {
-      throw new Error(`No se pudieron cargar los productos (${respuesta.status})`);
-    }
     const productos = await respuesta.json();
 
     listaProductos.innerHTML = "";
@@ -34,40 +31,22 @@ async function cargarProductos() {
       const elemento = document.createElement("div");
       elemento.classList.add("producto");
 
-      const detalles = document.createElement("div");
-      const nombre = document.createElement("h3");
-      nombre.textContent = producto.nombre;
-      const precio = document.createElement("p");
-      precio.classList.add("producto-precio");
-      precio.textContent = `Precio: $${producto.precio}`;
-      const stock = document.createElement("p");
-      stock.textContent = `Stock: ${producto.stock} unidades`;
-      detalles.append(nombre, precio, stock);
-
-      const acciones = document.createElement("div");
-      acciones.classList.add("acciones");
-      const btnEditar = document.createElement("button");
-      btnEditar.type = "button";
-      btnEditar.classList.add("btn-editar");
-      btnEditar.textContent = "Editar";
-      btnEditar.addEventListener("click", () => {
-        cargarEnFormulario(producto.id, producto.nombre, producto.precio, producto.stock);
-      });
-
-      const btnEliminar = document.createElement("button");
-      btnEliminar.type = "button";
-      btnEliminar.classList.add("btn-eliminar");
-      btnEliminar.textContent = "Eliminar";
-      btnEliminar.addEventListener("click", () => eliminarProducto(producto.id));
-
-      acciones.append(btnEditar, btnEliminar);
-      elemento.append(detalles, acciones);
+      elemento.innerHTML = `
+        <div>
+          <h3>${producto.nombre}</h3>
+          <p class="producto-precio">Precio: $${producto.precio}</p>
+          <p>Stock: ${producto.stock} unidades</p>
+        </div>
+        <div class="acciones">
+          <button class="btn-editar" onclick="cargarEnFormulario(${producto.id}, '${producto.nombre}', ${producto.precio}, ${producto.stock})">Editar</button>
+          <button class="btn-eliminar" onclick="eliminarProducto(${producto.id})">Eliminar</button>
+        </div>
+      `;
 
       listaProductos.appendChild(elemento);
     });
   } catch (error) {
     console.error("Error al cargar productos:", error);
-    listaProductos.textContent = "No fue posible cargar los productos. Verifica que el servidor esté activo.";
   }
 }
 
@@ -83,6 +62,7 @@ function cargarEnFormulario(id, nombre, precio, stock) {
   btnCancelar.style.display = "block";
   nombreInput.focus();
 }
+
 
 // Cancelar edición y restaurar formulario
 function cancelarEdicion() {
@@ -110,57 +90,46 @@ if (formulario) {
     try {
       if (id) {
         // MODO ACTUALIZAR (PUT)
-        const respuesta = await fetch(`${API_URL}/productos/${id}`, {
+        await fetch(`${API_URL}/productos/${id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ nombre, precio, stock }),
         });
-        if (!respuesta.ok) {
-          throw new Error(`No se pudo actualizar el producto (${respuesta.status})`);
-        }
       } else {
         // MODO CREAR (POST)
-        const respuesta = await fetch(`${API_URL}/productos`, {
+        await fetch(`${API_URL}/productos`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ nombre, precio, stock }),
         });
-        if (!respuesta.ok) {
-          throw new Error(`No se pudo crear el producto (${respuesta.status})`);
-        }
       }
 
       cancelarEdicion(); // Limpiar formulario y restaurar botones
-      await cargarProductos(); // Refrescar la lista en pantalla
+      cargarProductos(); // Refrescar la lista en pantalla
     } catch (error) {
       console.error("Error al guardar el producto:", error);
-      alert(`No se pudo guardar el producto: ${error.message}`);
     }
   });
 }
 
 // 4. Eliminar un producto (DELETE)
 async function eliminarProducto(id) {
-  const confirmar = confirm("¿Deseas eliminar este producto de la base de datos?");
+  const confirmar = confirm("¿Deseas eliminar este producto de la base de datos?", id);
   if (!confirmar) return;
 
   try {
-    const respuesta = await fetch(`${API_URL}/productos/${id}`, {
+    await fetch(`${API_URL}/productos/${id}`, {
       method: "DELETE",
     });
-    if (!respuesta.ok) {
-      throw new Error(`No se pudo eliminar el producto (${respuesta.status})`);
-    }
 
     // Si estábamos editando ese mismo producto, cancelamos la edición
     if (productoId.value == id) {
       cancelarEdicion();
     }
 
-    await cargarProductos(); // Refrescar la lista en pantalla
+    cargarProductos(); // Refrescar la lista en pantalla
   } catch (error) {
     console.error("Error al eliminar producto:", error);
-    alert(`No se pudo eliminar el producto: ${error.message}`);
   }
 }
 

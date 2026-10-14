@@ -1,3 +1,6 @@
+.gitignore
+
+
 # Ignora node_modules en cualquier carpeta (frontend y backend)
 **/node_modules/
 
@@ -5,8 +8,9 @@
 **/.env
 **/.env.local
 
-t Ignora carpetas de compilación
+# Ignora carpetas de compilación
 **/dist/
 **/build/
 
 # Archivos del sistema
+.DS_Store

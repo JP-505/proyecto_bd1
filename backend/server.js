@@ -1,12 +1,12 @@
 const express = require("express");
 const cors = require("cors");
-const conexion = require("./db"); // Importamos la conexión creada en db.js
-
+const db = require('./db'); // Importamos la conexión una sola vez
 const app = express();
 
-// Middlewares globales
-app.use(cors()); // Permitir peticiones desde el frontend
-app.use(express.json()); // Habilitar la lectura de datos en formato JSON en el cuerpo (req.body)
+// Middlewares globales (¡OBLIGATORIO que estén antes de las rutas!)
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cors()); 
 
 // Ruta de prueba
 app.get("/", (req, res) => {
@@ -17,12 +17,11 @@ app.get("/", (req, res) => {
 app.get("/productos", (req, res) => {
   const sql = "SELECT * FROM productos";
 
-  conexion.query(sql, (error, resultados) => {
+  db.query(sql, (error, resultados) => {
     if (error) {
       console.error("Error al consultar:", error);
       return res.status(500).json({ mensaje: "Error al consultar los productos" });
     }
-    // Retornamos el array de productos como JSON al cliente
     res.json(resultados);
   });
 });
@@ -31,11 +30,10 @@ app.get("/productos", (req, res) => {
 app.post("/productos", (req, res) => {
   const { nombre, precio, stock } = req.body;
 
-  // Consulta parametrizada con '?' para prevenir inyección SQL
   const sql = "INSERT INTO productos (nombre, precio, stock) VALUES (?, ?, ?)";
   const valores = [nombre, precio, stock];
 
-  conexion.query(sql, valores, (error, resultado) => {
+  db.query(sql, valores, (error, resultado) => {
     if (error) {
       console.error("Error al insertar:", error);
       return res.status(500).json({ mensaje: "Error al crear el producto" });
@@ -48,15 +46,37 @@ app.post("/productos", (req, res) => {
   });
 });
 
+// Ruta única para procesar y guardar el mensaje de contacto
+app.post('/enviar-mensaje', (req, res) => {
+  console.log("Datos Recibidos:", req.body); // Debería imprimir el objeto con nombre, correo, etc.
+
+  const { nombre, correo, asunto, mensaje } = req.body;
+
+  if (!correo) {
+    return res.status(400).json({ exito: false, mensaje: "El correo es obligatorio" });
+  }
+
+  const query = 'INSERT INTO contactos (nombre, correo, asunto, mensaje) VALUES (?, ?, ?, ?)';
+  
+  db.query(query, [nombre, correo, asunto, mensaje], (err, resultado) => {
+    if (err) {
+      console.error('ERROR DE MYSQL:', err);
+      return res.status(500).json({ exito: false, mensaje: 'Error en el servidor: ' + err.sqlMessage });
+    }
+    
+    res.json({ exito: true, mensaje: '¡Mensaje guardado correctamente!' });
+  });
+});
+
 // 3. Actualizar un producto existente (UPDATE)
 app.put("/productos/:id", (req, res) => {
   const id = req.params.id;
   const { nombre, precio, stock } = req.body;
 
-  const sql = "UPDATE productos SET nombre = ?, precio = ?, stock = ? WHERE id = ?";
+  const sql = "UPDATE productos SET nombre = ?, precio = ?, stock = ? WHERE ID = ?"; 
   const valores = [nombre, precio, stock, id];
 
-  conexion.query(sql, valores, (error, resultado) => {
+  db.query(sql, valores, (error, resultado) => {
     if (error) {
       console.error("Error al actualizar:", error);
       return res.status(500).json({ mensaje: "Error al actualizar el producto" });
@@ -68,9 +88,9 @@ app.put("/productos/:id", (req, res) => {
 // 4. Eliminar un producto (DELETE)
 app.delete("/productos/:id", (req, res) => {
   const id = req.params.id;
-  const sql = "DELETE FROM productos WHERE id = ?";
+  const sql = "DELETE FROM productos WHERE ID = ?"; 
 
-  conexion.query(sql, [id], (error, resultado) => {
+  db.query(sql, [id], (error, resultado) => {
     if (error) {
       console.error("Error al eliminar:", error);
       return res.status(500).json({ mensaje: "Error al eliminar el producto" });
@@ -81,5 +101,5 @@ app.delete("/productos/:id", (req, res) => {
 
 // Iniciar servidor en el puerto 3000
 app.listen(3000, () => {
-  console.log(" Servidor ejecutándose en http://localhost:3000");
+  console.log("Servidor ejecutándose en http://localhost:3000");
 });

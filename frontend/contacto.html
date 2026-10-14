@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contáctanos</title>
+    <link rel="stylesheet" href="contacto.css">
+</head>
+<body>
+    <header class="navbar">
+    <div class="contenedor nav-contenido">
+      <a href="index.html" class="logo"> Mi<strong>Tienda</strong></a>
+      <nav class="nav-links">
+        <a href="index.html">Inicio</a>
+        <a href="#productos">Productos</a>
+        <a href="contacto.html">Contacto</a>
+      </nav>
+    </div>
+  </header>
+    <div class="tarjeta">
+        <form id="contact-form" action="http://localhost:3000/enviar-mensaje" method="POST">
+            <label for="nombre">Nombre</label>
+            <input type="text" name="nombre" id="nombre" placeholder="Escribe tu nombre" required>
+            <br><br>
+            <label for="correo">Correo</label>
+            <input type="email" name="correo" id="correo" placeholder="Escribe tu correo" required>
+            <br><br>
+            <label for="asunto">Asunto</label>
+            <input type="text" name="asunto" id="asunto" placeholder="Ej: Consulta sobre un producto" required>
+            <br><br>
+            <label for="mensaje">Mensaje</label>
+            <textarea name="mensaje" id="mensaje" rows="5" required></textarea>
+            <br><br>
+            <button type="submit" class="btn">Enviar</button>
+        </form>
+
+<script>
+  const form = document.getElementById('contact-form');
+
+  if (form) {
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      const formData = {
+        nombre: document.getElementById('nombre').value,
+        correo: document.getElementById('correo').value,
+        asunto: document.getElementById('asunto').value,
+        mensaje: document.getElementById('mensaje').value
+      };
+
+      try {
+        const respuesta = await fetch('http://localhost:3000/enviar-mensaje', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(formData)
+        });
+
+        const resultado = await respuesta.json();
+
+        if (resultado.exito) {
+          alert('¡Mensaje guardado correctamente en la base de datos!');
+          form.reset();
+        } else {
+          alert('Error: ' + resultado.mensaje);
+        }
+      } catch (error) {
+        console.error('Error de red:', error);
+        alert('No se pudo conectar con el servidor.');
+      }
+    });
+  }
+</script>
+
+    </div>
+
+    <footer>
+        <p>&copy; 2026 Mi Tienda — Proyecto Formativo con Node.js, Express y MySQL.</p>
+    </footer>
+    
+</body>
+</html>
