@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,7 +18,7 @@
     </div>
   </header>
     <div class="tarjeta">
-        <form id="contact-form" action="https://proyecto-bd1.onrender.com" method="POST">
+        <form id="contact-form" action="https://proyecto-bd1.onrender.com/contacto" method="POST">
             <label for="nombre">Nombre</label>
             <input type="text" name="nombre" id="nombre" placeholder="Escribe tu nombre" required>
             <br><br>
@@ -46,6 +46,7 @@
     </section>
 
 <script>
+  const API_URL = 'https://proyecto-bd1.onrender.com';
   const form = document.getElementById('contact-form');
   const listaMensajes = document.getElementById('listaMensajes');
   const btnActualizarMensajes = document.getElementById('btnActualizarMensajes');
@@ -54,31 +55,54 @@
     if (!listaMensajes) return;
 
     try {
-      const respuesta = await fetch('https://proyecto-bd1.onrender.com');
+      const respuesta = await fetch(`${API_URL}/contacto`);
       const data = await respuesta.json();
 
-      if (!respuesta.ok || !data.exito) {
+      if (!respuesta.ok) {
         throw new Error(data.mensaje || 'No se pudieron cargar los mensajes');
       }
 
-      const mensajes = data.mensajes || [];
+      if (!Array.isArray(data)) {
+        throw new Error('El servidor devolvió una respuesta inesperada');
+      }
 
-      if (mensajes.length === 0) {
+      if (data.length === 0) {
         listaMensajes.innerHTML = '<p class="mensaje-vacio">Aún no hay mensajes recibidos.</p>';
         return;
       }
 
-      listaMensajes.innerHTML = mensajes.map((mensaje) => `
-        <article class="mensaje-item">
-          <div class="mensaje-topo">
-            <strong>${mensaje.nombre}</strong>
-            <span>${new Date(mensaje.fecha).toLocaleString('es-ES')}</span>
-          </div>
-          <p class="mensaje-mail">${mensaje.correo}</p>
-          <p class="mensaje-asunto">${mensaje.asunto}</p>
-          <p class="mensaje-cuerpo">${mensaje.mensaje}</p>
-        </article>
-      `).join('');
+      listaMensajes.replaceChildren();
+      data.forEach((mensaje) => {
+        const articulo = document.createElement('article');
+        articulo.className = 'mensaje-item';
+
+        const cabecera = document.createElement('div');
+        cabecera.className = 'mensaje-topo';
+
+        const nombre = document.createElement('strong');
+        nombre.textContent = mensaje.nombre;
+
+        const fecha = document.createElement('span');
+        fecha.textContent = mensaje.fecha
+          ? new Date(mensaje.fecha).toLocaleString('es-ES')
+          : '';
+
+        const correo = document.createElement('p');
+        correo.className = 'mensaje-mail';
+        correo.textContent = mensaje.correo;
+
+        const asunto = document.createElement('p');
+        asunto.className = 'mensaje-asunto';
+        asunto.textContent = mensaje.asunto;
+
+        const texto = document.createElement('p');
+        texto.className = 'mensaje-cuerpo';
+        texto.textContent = mensaje.mensaje;
+
+        cabecera.append(nombre, fecha);
+        articulo.append(cabecera, correo, asunto, texto);
+        listaMensajes.appendChild(articulo);
+      });
     } catch (error) {
       console.error('Error al cargar mensajes:', error);
       listaMensajes.innerHTML = '<p class="mensaje-vacio">No se pudieron cargar los mensajes.</p>';
@@ -97,7 +121,7 @@
       };
 
       try {
-        const respuesta = await fetch('https://proyecto-bd1.onrender.com', {
+        const respuesta = await fetch(`${API_URL}/contacto`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -107,16 +131,16 @@
 
         const resultado = await respuesta.json();
 
-        if (resultado.exito) {
-          alert('¡Mensaje guardado correctamente en la base de datos!');
-          form.reset();
-          await cargarMensajes();
-        } else {
-          alert('Error: ' + resultado.mensaje);
+        if (!respuesta.ok) {
+          throw new Error(resultado.mensaje || 'No se pudo enviar el mensaje');
         }
+
+        alert(resultado.mensaje || '¡Mensaje enviado correctamente!');
+        form.reset();
+        await cargarMensajes();
       } catch (error) {
-        console.error('Error de red:', error);
-        alert('No se pudo conectar con el servidor.');
+        console.error('Error al enviar mensaje:', error);
+        alert(error.message || 'No se pudo conectar con el servidor.');
       }
     });
   }
@@ -127,8 +151,6 @@
 
   cargarMensajes();
 </script>
-
-    </div>
 
     <footer>
         <p>&copy; 2026 Mi Tienda — Proyecto Formativo con Node.js, Express y MySQL.</p>
