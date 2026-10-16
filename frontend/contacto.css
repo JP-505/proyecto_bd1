@@ -221,6 +221,19 @@ form textarea {
   box-shadow: #1d4ed8;
 }
 
+.mensaje-acciones .btn-eliminar {
+  width: auto;
+  max-width: 100%;
+  margin-top: 0;
+  background-color: #dc2626;
+}
+
+.mensaje-acciones .btn-eliminar:hover {
+  background-color: #b91c1c;
+  transform: none;
+  box-shadow: none;
+}
+
 footer {
   margin-top: auto;
   text-align: center;
