@@ -99,8 +99,18 @@
         texto.className = 'mensaje-cuerpo';
         texto.textContent = mensaje.mensaje;
 
+        const acciones = document.createElement('div');
+        acciones.className = 'mensaje-acciones';
+
+        const btnEliminar = document.createElement('button');
+        btnEliminar.type = 'button';
+        btnEliminar.className = 'btn btn-small btn-eliminar';
+        btnEliminar.textContent = 'Eliminar';
+        btnEliminar.addEventListener('click', () => eliminarMensaje(mensaje.id, btnEliminar));
+
+        acciones.appendChild(btnEliminar);
         cabecera.append(nombre, fecha);
-        articulo.append(cabecera, correo, asunto, texto);
+        articulo.append(cabecera, correo, asunto, texto, acciones);
         listaMensajes.appendChild(articulo);
       });
     } catch (error) {
@@ -143,6 +153,37 @@
         alert(error.message || 'No se pudo conectar con el servidor.');
       }
     });
+  }
+
+  async function eliminarMensaje(id, boton) {
+    if (!confirm('¿Seguro que deseas eliminar este mensaje? Esta acción no se puede deshacer.')) {
+      return;
+    }
+
+    boton.disabled = true;
+
+    try {
+      const respuesta = await fetch(`${API_URL}/contacto/${encodeURIComponent(id)}`, {
+        method: 'DELETE'
+      });
+
+      let resultado;
+      try {
+        resultado = await respuesta.json();
+      } catch {
+        throw new Error('El servidor devolvió una respuesta inválida al eliminar el mensaje.');
+      }
+
+      if (!respuesta.ok) {
+        throw new Error(resultado.mensaje || `No se pudo eliminar el mensaje (HTTP ${respuesta.status}).`);
+      }
+
+      await cargarMensajes();
+    } catch (error) {
+      console.error('Error al eliminar mensaje:', error);
+      alert(error.message || 'No se pudo conectar con el servidor.');
+      boton.disabled = false;
+    }
   }
 
   if (btnActualizarMensajes) {

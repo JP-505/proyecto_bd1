@@ -147,6 +147,21 @@ body {
   font-size: 0.85rem;
 }
 
+.mensaje-acciones {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-eliminar {
+  width: auto;
+  margin-top: 0;
+  background-color: #dc2626;
+}
+
+.btn-eliminar:hover {
+  background-color: #b91c1c;
+}
+
 form label {
   display: block;
   font-weight: 600;
