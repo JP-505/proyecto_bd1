@@ -54,7 +54,7 @@
     if (!listaMensajes) return;
 
     try {
-      const respuesta = await fetch('http://localhost:3000/mensajes');
+      const respuesta = await fetch('https://proyecto-bd1.onrender.com');
       const data = await respuesta.json();
 
       if (!respuesta.ok || !data.exito) {
@@ -97,7 +97,7 @@
       };
 
       try {
-        const respuesta = await fetch('http://localhost:3000/enviar-mensaje', {
+        const respuesta = await fetch('https://proyecto-bd1.onrender.com', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
