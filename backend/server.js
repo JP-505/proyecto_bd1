@@ -1,12 +1,13 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-const db = require('./db'); // Importamos la conexión una sola vez
+const conexion = require("./db"); // Importamos la conexión creada en db.js
+
 const app = express();
 
-// Middlewares globales (¡OBLIGATORIO que estén antes de las rutas!)
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(cors()); 
+// Middlewares globales
+app.use(cors()); // Permitir peticiones desde el frontend
+app.use(express.json()); // Habilitar la lectura de datos en formato JSON en el cuerpo (req.body)
 
 // Ruta de prueba
 app.get("/", (req, res) => {
@@ -17,11 +18,12 @@ app.get("/", (req, res) => {
 app.get("/productos", (req, res) => {
   const sql = "SELECT * FROM productos";
 
-  db.query(sql, (error, resultados) => {
+  conexion.query(sql, (error, resultados) => {
     if (error) {
       console.error("Error al consultar:", error);
       return res.status(500).json({ mensaje: "Error al consultar los productos" });
     }
+    // Retornamos el array de productos como JSON al cliente
     res.json(resultados);
   });
 });
@@ -30,10 +32,11 @@ app.get("/productos", (req, res) => {
 app.post("/productos", (req, res) => {
   const { nombre, precio, stock } = req.body;
 
+  // Consulta parametrizada con '?' para prevenir inyección SQL
   const sql = "INSERT INTO productos (nombre, precio, stock) VALUES (?, ?, ?)";
   const valores = [nombre, precio, stock];
 
-  db.query(sql, valores, (error, resultado) => {
+  conexion.query(sql, valores, (error, resultado) => {
     if (error) {
       console.error("Error al insertar:", error);
       return res.status(500).json({ mensaje: "Error al crear el producto" });
@@ -46,55 +49,15 @@ app.post("/productos", (req, res) => {
   });
 });
 
-// Ruta única para procesar y guardar el mensaje de contacto
-app.post('/enviar-mensaje', (req, res) => {
-  console.log("Datos Recibidos:", req.body); // Debería imprimir el objeto con nombre, correo, etc.
-
-  const { nombre, correo, asunto, mensaje } = req.body;
-
-  if (!correo) {
-    return res.status(400).json({ exito: false, mensaje: "El correo es obligatorio" });
-  }
-
-  const query = 'INSERT INTO contactos (nombre, correo, asunto, mensaje) VALUES (?, ?, ?, ?)';
-  
-  db.query(query, [nombre, correo, asunto, mensaje], (err, resultado) => {
-    if (err) {
-      console.error('ERROR DE MYSQL:', err);
-      return res.status(500).json({ exito: false, mensaje: 'Error en el servidor: ' + err.sqlMessage });
-    }
-    
-    res.json({ exito: true, mensaje: '¡Mensaje guardado correctamente!' });
-  });
-});
-
-// 2. Obtener todos los mensajes recibidos
-app.get('/mensajes', (req, res) => {
-  const query = 'SELECT id, nombre, correo, asunto, mensaje, fecha FROM contactos ORDER BY fecha DESC';
-
-  db.query(query, (err, resultados) => {
-    if (err) {
-      console.error('Error al consultar mensajes:', err);
-      return res.status(500).json({ exito: false, mensaje: 'Error al consultar mensajes' });
-    }
-
-    res.json({ exito: true, mensajes: resultados });
-  });
-});
-
-app.get('/contactos', (req, res) => {
-  res.redirect(307, '/mensajes');
-});
-
 // 3. Actualizar un producto existente (UPDATE)
 app.put("/productos/:id", (req, res) => {
   const id = req.params.id;
   const { nombre, precio, stock } = req.body;
 
-  const sql = "UPDATE productos SET nombre = ?, precio = ?, stock = ? WHERE ID = ?"; 
+  const sql = "UPDATE productos SET nombre = ?, precio = ?, stock = ? WHERE id = ?";
   const valores = [nombre, precio, stock, id];
 
-  db.query(sql, valores, (error, resultado) => {
+  conexion.query(sql, valores, (error, resultado) => {
     if (error) {
       console.error("Error al actualizar:", error);
       return res.status(500).json({ mensaje: "Error al actualizar el producto" });
@@ -106,14 +69,70 @@ app.put("/productos/:id", (req, res) => {
 // 4. Eliminar un producto (DELETE)
 app.delete("/productos/:id", (req, res) => {
   const id = req.params.id;
-  const sql = "DELETE FROM productos WHERE ID = ?"; 
+  const sql = "DELETE FROM productos WHERE id = ?";
 
-  db.query(sql, [id], (error, resultado) => {
+  conexion.query(sql, [id], (error, resultado) => {
     if (error) {
       console.error("Error al eliminar:", error);
       return res.status(500).json({ mensaje: "Error al eliminar el producto" });
     }
     res.json({ mensaje: "Producto eliminado correctamente" });
+  });
+});
+
+// ==========================================
+// RUTAS DE CONTACTO
+// ==========================================
+
+// 5. Registrar un nuevo mensaje de contacto (POST)
+app.post("/contacto", (req, res) => {
+  const { nombre, email, asunto, mensaje } = req.body;
+
+  // Validación básica de campos requeridos
+  if (!nombre || !email || !asunto || !mensaje) {
+    return res.status(400).json({ mensaje: "Todos los campos son obligatorios" });
+  }
+
+  const sql = "INSERT INTO mensajes_contacto (nombre, email, asunto, mensaje) VALUES (?, ?, ?, ?)";
+  const valores = [nombre, email, asunto, mensaje];
+
+  conexion.query(sql, valores, (error, resultado) => {
+    if (error) {
+      console.error("Error al guardar mensaje de contacto:", error);
+      return res.status(500).json({ mensaje: "Error al registrar el mensaje de contacto" });
+    }
+
+    res.status(201).json({
+      mensaje: "Mensaje de contacto enviado con éxito",
+      id: resultado.insertId,
+    });
+  });
+});
+
+// 6. Consultar todos los mensajes de contacto (GET)
+app.get("/contacto", (req, res) => {
+  const sql = "SELECT * FROM mensajes_contacto ORDER BY fecha_registro DESC";
+
+  conexion.query(sql, (error, resultados) => {
+    if (error) {
+      console.error("Error al consultar mensajes de contacto:", error);
+      return res.status(500).json({ mensaje: "Error al consultar los mensajes de contacto" });
+    }
+    res.json(resultados);
+  });
+});
+
+// 7. Eliminar un mensaje de contacto (DELETE)
+app.delete("/contacto/:id", (req, res) => {
+  const id = req.params.id;
+  const sql = "DELETE FROM mensajes_contacto WHERE id = ?";
+
+  conexion.query(sql, [id], (error, resultado) => {
+    if (error) {
+      console.error("Error al eliminar mensaje de contacto:", error);
+      return res.status(500).json({ mensaje: "Error al eliminar el mensaje de contacto" });
+    }
+    res.json({ mensaje: "Mensaje eliminado correctamente" });
   });
 });
 
